@@ -231,7 +231,8 @@ button{font-family:inherit;cursor:pointer}
 .region.hoverable:hover{filter:brightness(0.82)}
 .region.disabled{cursor:not-allowed}
 .region.disabled:hover{stroke:#fff;stroke-width:1;filter:none}
-.region.sel{stroke:var(--border-strong);stroke-width:3;filter:drop-shadow(0 0 0 3px var(--accent))}
+.region.sel{stroke:#fff;stroke-width:1}
+.sel-overlay{fill:url(#pat-sel);stroke:none;pointer-events:none}
 .region:focus-visible{stroke:var(--border-strong);stroke-width:2.5}
 .map-ring{fill:none;stroke:var(--accent);stroke-width:3.5;pointer-events:none;opacity:0;transition:opacity .15s}
 .rlabel{font-family:var(--font-b);font-size:10px;font-weight:600;fill:var(--ink);pointer-events:none;
@@ -296,16 +297,45 @@ button{font-family:inherit;cursor:pointer}
 .dq svg{width:15px;height:15px;stroke:var(--ink-faint);fill:none;stroke-width:1.8;flex:0 0 auto}
 .dq b{color:var(--ink);font-weight:600}
 
-/* trend sparkline — rhymes with the heartbeat strip */
-.spark{width:100%;height:64px;display:block}
-.spark .gl{stroke:var(--border-soft);stroke-width:1}
-.spark .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-.spark .dot{fill:var(--accent)}
+/* trend chart — realistic time-series with hover read-out, rhymes with the heartbeat strip */
+.trend-plot{position:relative;height:128px;margin-top:2px;touch-action:none}
+.trend-plot .yaxis{position:absolute;inset:0;pointer-events:none}
+.trend-plot .yaxis span{position:absolute;left:0;transform:translateY(-50%);font-size:9.5px;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums;background:var(--surface);padding-right:3px}
+.spark{position:absolute;left:26px;top:0;width:calc(100% - 26px);height:100%;display:block;overflow:visible}
+.spark .gl{stroke:var(--border-soft);stroke-width:1;vector-effect:non-scaling-stroke}
+.spark .tgt{stroke:var(--accent);stroke-width:1;stroke-dasharray:4 3;opacity:.5;vector-effect:non-scaling-stroke}
+.spark .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.spark .area{stroke:none}
 .spark .selband{fill:var(--accent-soft)}
-.spark-x{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-faint);margin-top:4px}
-.trend-classrow{display:flex;gap:2px;margin-top:9px}
-.trend-classrow i{flex:1;height:6px;border-radius:2px}
+/* HTML overlay — crisp dots/crosshair/tooltip immune to SVG x-stretch */
+.trend-ovl{position:absolute;inset:0 0 0 26px;z-index:2}
+.trend-hit{position:absolute;inset:0;cursor:crosshair}
+.t-dot{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--surface);
+  border:1.5px solid var(--accent);transform:translate(-50%,-50%);pointer-events:none;transition:opacity .12s;opacity:.5}
+.t-dot.gap{background:var(--ink-faint);border-color:var(--ink-faint);opacity:.35}
+.t-dot.sel{opacity:1;width:6px;height:6px;box-shadow:0 0 0 3px var(--accent-soft)}
+.t-dot.hot{opacity:0}
+.t-cross{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed color-mix(in oklab,var(--accent) 55%,transparent);
+  transform:translateX(-50%);pointer-events:none;opacity:0;transition:opacity .1s}
+.t-cross.on{opacity:1}
+.t-marker{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--accent);
+  border:2.5px solid var(--surface);box-shadow:0 1px 4px rgba(20,32,26,.3),0 0 0 1px var(--accent);
+  transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .1s}
+.t-marker.on{opacity:1}
+.t-tip{position:absolute;z-index:5;background:var(--ink);color:#fff;border-radius:8px;padding:7px 10px;
+  pointer-events:none;opacity:0;transform:translate(-50%,-118%);transition:opacity .1s;white-space:nowrap;
+  box-shadow:var(--shadow-pop)}
+.t-tip.on{opacity:1}
+.t-tip .tw{font-size:11px;font-weight:700;margin-bottom:3px}
+.t-tip .tv{font-size:11px;color:#cdd8d1;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px}
+.t-tip .tv b{color:#fff;font-weight:700}
+.t-tip .tv .cd{width:8px;height:8px;border-radius:50%;display:inline-block}
+.spark-x{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-faint);margin-top:6px;padding-left:26px}
+.trend-classrow{display:flex;gap:2px;margin-top:9px;padding-left:26px}
+.trend-classrow i{flex:1;height:6px;border-radius:2px;transition:transform .1s}
 .trend-classrow i.cur{outline:2px solid var(--accent);outline-offset:1px}
+.trend-classrow i.hot{transform:scaleY(1.7)}
 
 /* facility table */
 .us-tools{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
@@ -641,6 +671,10 @@ table.us tr.nodata td{color:var(--ink-faint)}
   <pattern id="pat-none" patternUnits="userSpaceOnUse" width="6" height="6">
     <rect width="6" height="6" fill="#D9D9D9"/><circle cx="3" cy="3" r="1" fill="#b3b3b3"/>
   </pattern>
+  <!-- selection hatch: transparent background, dark diagonal lines overlaid on the area's own colour -->
+  <pattern id="pat-sel" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="7" stroke="#15201A" stroke-width="1.5" stroke-opacity="0.55"/>
+  </pattern>
 </defs></svg>
 
 <script>
@@ -820,6 +854,7 @@ function paintNation(){
     p.classList.toggle('disabled',idx<0);
     p.classList.toggle('sel', ST.level==='province'&&name===ST.prov);
   });
+  stampSelOverlay(natRegions);
 }
 function paintProvince(){
   const a=ST.wa,b=ST.wb;
@@ -831,6 +866,19 @@ function paintProvince(){
     p.classList.add('hoverable');
     p.classList.toggle('sel',name===ST.dist);
   });
+  stampSelOverlay(distRegions);
+}
+/* copy every selected region's geometry onto the group's hatch overlay (kept as the group's
+   last child so it sits on top while the original keeps its fill + untouched border) */
+function stampSelOverlay(group){
+  let ov=group.querySelector(':scope > .sel-overlay');
+  if(!ov){
+    ov=document.createElementNS('http://www.w3.org/2000/svg','path');
+    ov.setAttribute('class','sel-overlay');
+    group.appendChild(ov);
+  }else{ group.appendChild(ov); } // ensure it stays last (on top)
+  const sels=[...group.querySelectorAll('.region.sel')];
+  ov.setAttribute('d', sels.map(p=>p.getAttribute('d')).join(' '));
 }
 
 /* ============================================================ DRILL / NAV */
@@ -961,31 +1009,105 @@ function kpiCard(bk){
     <div class="kpi-sub">Total de <b class="tnum">${total(bk.b)}</b> amostras no período · <b class="tnum">${bk.b[0]+bk.b[1]}</b> dentro do alvo</div>
   </div>`;
 }
-/* trend: weekly %<15 sparkline across 28 weeks + class strip, selected band highlighted */
+/* trend: realistic weekly %<15 time-series across 28 weeks, interactive hover read-out + class strip */
+const PADX=2, PADT=10, PADB=12, BASEY=100-PADB;            // viewBox 0..100 plot insets
+const trX=i=>PADX+i*(100-2*PADX)/(NW-1);
+const trY=v=>PADT+(1-v)*(100-PADT-PADB);
 function trendCard(kind,key){
-  const vals=[],classes=[];
+  // build the series: value, class, sample count, screen coords per week
+  const pts=[];
   for(let w=0;w<NW;w++){
     const b = kind==='district'? weekBuckets(key,w).b : provinceBuckets(key,w,w).b;
-    vals.push(pctU15(b));classes.push(classify(b));
+    const v=pctU15(b);
+    pts.push({i:w,v,cls:classify(b),total:total(b),label:WEEKS[w].l,
+              lx:trX(w),ty:v==null?null:trY(v)});
   }
-  const W=300,H=58,pad=3;
-  const x=i=>pad+i*(W-2*pad)/(NW-1);
-  const y=v=>H-pad-(v==null?0:v)*(H-2*pad);
-  let d='',started=false;
-  vals.forEach((v,i)=>{ if(v==null)return; d+=(started?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)+' ';started=true;});
-  const bandX1=x(ST.wa)-4,bandW=x(ST.wb)-x(ST.wa)+8;
-  const dots=vals.map((v,i)=> (v!=null&&i>=ST.wa&&i<=ST.wb)?`<circle class="dot" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.6"/>`:'').join('');
-  const cstrip=classes.map((c,i)=>`<i class="${i>=ST.wa&&i<=ST.wb?'cur':''}" style="background:${c<0?'var(--tat-none)':CLASSES[c].fill}"></i>`).join('');
+  // line + area paths over contiguous non-null runs (gaps = sem dados)
+  let line='',area='',run=[];
+  const flush=()=>{ if(run.length){
+    const seg=run.map((p,k)=>(k?'L':'M')+p.lx.toFixed(2)+' '+p.ty.toFixed(2)).join(' ');
+    line+=seg+' ';
+    area+='M'+run[0].lx.toFixed(2)+' '+BASEY+' '+run.map(p=>'L'+p.lx.toFixed(2)+' '+p.ty.toFixed(2)).join(' ')
+         +' L'+run[run.length-1].lx.toFixed(2)+' '+BASEY+' Z ';
+    run=[]; } };
+  pts.forEach(p=>{ if(p.v==null){flush();} else run.push(p); }); flush();
+
+  const bandX1=trX(ST.wa)-1.6, bandW=trX(ST.wb)-trX(ST.wa)+3.2;
+  // persistent crisp dots (HTML overlay — immune to x-stretch)
+  const dots=pts.map(p=>{
+    const cls=p.v==null?'t-dot gap':'t-dot'+((p.i>=ST.wa&&p.i<=ST.wb)?' sel':'');
+    const top=p.v==null?BASEY:p.ty;
+    return `<i class="${cls}" data-i="${p.i}" style="left:${p.lx}%;top:${top}%"></i>`;
+  }).join('');
+  const cstrip=pts.map(p=>`<i class="${p.i>=ST.wa&&p.i<=ST.wb?'cur':''}" data-i="${p.i}" style="background:${p.cls<0?'var(--tat-none)':CLASSES[p.cls].fill}"></i>`).join('');
+  const gridY=[1,0.5,0].map(v=>`<line class="gl" x1="0" y1="${trY(v).toFixed(1)}" x2="100" y2="${trY(v).toFixed(1)}"/>`).join('');
+  const yLabels=[1,0.5,0].map(v=>`<span style="top:${trY(v).toFixed(1)}%">${Math.round(v*100)}</span>`).join('');
+
+  window.__TREND={pts,base:BASEY,target:TARGET};
   return `<div class="p-card">
-    <div class="lbl">Evolução semanal <span style="color:var(--ink-faint);font-weight:500;text-transform:none;letter-spacing:0">% &lt;15 dias</span></div>
-    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-      <rect class="selband" x="${bandX1.toFixed(1)}" y="0" width="${bandW.toFixed(1)}" height="${H}" rx="3"/>
-      <line class="gl" x1="0" y1="${y(TARGET).toFixed(1)}" x2="${W}" y2="${y(TARGET).toFixed(1)}" stroke-dasharray="3 3"/>
-      <path class="ln" d="${d}"/>${dots}
-    </svg>
+    <div class="lbl">Evolução semanal <span style="color:var(--ink-faint);font-weight:500;text-transform:none;letter-spacing:0">% &lt;15 dias · ${NW} semanas</span></div>
+    <div class="trend-plot" id="trendPlot">
+      <div class="yaxis">${yLabels}</div>
+      <svg class="spark" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="var(--accent)" stop-opacity="0.20"/>
+          <stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>
+        </linearGradient></defs>
+        <rect class="selband" x="${bandX1.toFixed(1)}" y="0" width="${bandW.toFixed(1)}" height="100" rx="1"/>
+        ${gridY}
+        <line class="tgt" x1="0" y1="${trY(TARGET).toFixed(1)}" x2="100" y2="${trY(TARGET).toFixed(1)}"/>
+        <path class="area" d="${area}" fill="url(#trendGrad)"/>
+        <path class="ln" d="${line}"/>
+      </svg>
+      <div class="trend-ovl">
+        ${dots}
+        <div class="t-cross" id="trCross"></div>
+        <div class="t-marker" id="trMark"></div>
+        <div class="t-tip" id="trTip"></div>
+        <div class="trend-hit" id="trHit"></div>
+      </div>
+    </div>
     <div class="spark-x"><span>${WEEKS[0].l}</span><span>${WEEKS[NW-1].l}</span></div>
     <div class="trend-classrow">${cstrip}</div>
   </div>`;
+}
+/* wire the trend hover read-out after each panel render */
+function wireTrend(){
+  const plot=document.getElementById('trendPlot'); if(!plot||!window.__TREND)return;
+  const hit=document.getElementById('trHit'),cross=document.getElementById('trCross'),
+        mark=document.getElementById('trMark'),tip=document.getElementById('trTip');
+  const {pts,base}=window.__TREND;
+  const dotsEls=plot.querySelectorAll('.t-dot'), barsEls=plot.parentElement.querySelectorAll('.trend-classrow i');
+  function show(e){
+    const r=hit.getBoundingClientRect();
+    const frac=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
+    // nearest week by horizontal fraction
+    let p=pts[0],best=1e9;
+    for(const q of pts){const dd=Math.abs(q.lx/100-frac); if(dd<best){best=dd;p=q;}}
+    cross.style.left=p.lx+'%';cross.classList.add('on');
+    const top=p.v==null?base:p.ty;
+    mark.style.left=p.lx+'%';mark.style.top=top+'%';mark.classList.add('on');
+    mark.style.background=p.v==null?'var(--ink-faint)':'var(--accent)';
+    mark.style.boxShadow=p.v==null?'0 1px 4px rgba(20,32,26,.3),0 0 0 1px var(--ink-faint)':'0 1px 4px rgba(20,32,26,.3),0 0 0 1px var(--accent)';
+    // tooltip
+    let body;
+    if(p.v==null){ body=`<div class="tv" style="color:#9fb0a6">Sem dados</div>`; }
+    else{ const m=CLASSES[p.cls];
+      body=`<div class="tv"><span class="cd" style="background:${m.fill}"></span><b>${Math.round(p.v*100)}%</b> &lt;15 dias</div>
+            <div class="tv" style="color:#9fb0a6">${m.key} · ${p.total} amostras</div>`; }
+    tip.innerHTML=`<div class="tw">${p.label}</div>${body}`;
+    tip.style.left=Math.min(82,Math.max(18,p.lx))+'%';
+    tip.style.top=(p.v==null?base:p.ty)+'%';
+    tip.classList.add('on');
+    // echo on dots + class strip
+    dotsEls.forEach(d=>d.classList.toggle('hot',+d.dataset.i===p.i));
+    barsEls.forEach(b=>b.classList.toggle('hot',+b.dataset.i===p.i));
+  }
+  function hide(){ cross.classList.remove('on');mark.classList.remove('on');tip.classList.remove('on');
+    dotsEls.forEach(d=>d.classList.remove('hot'));barsEls.forEach(b=>b.classList.remove('hot')); }
+  hit.addEventListener('pointermove',show);
+  hit.addEventListener('pointerleave',hide);
+  hit.addEventListener('pointerdown',show);
 }
 function facilityTable(d){
   let rows=facilityBreakdown(d,ST.wa,ST.wb);
@@ -1062,6 +1184,7 @@ function renderPanel(){
         <table class="us"><thead><tr><th>Distrito</th><th>Classe TAT</th><th class="r">% &lt;15</th><th class="r">Amostras</th></tr></thead>
         <tbody>${drows}</tbody></table>
       </div>`;
+    wireTrend();
     return;
   }
   // DISTRICT detail (money shot)
@@ -1078,6 +1201,7 @@ function renderPanel(){
     ${distributionCard(bk)}
     ${trendCard('district',ST.dist)}
     ${facilityTable(ST.dist)}`;
+  wireTrend();
 }
 
 /* ============================================================ FOOTER */
